@@ -1,22 +1,16 @@
 version: 1
-backend:
-  phases:
-    build:
-      commands:
-        - npm ci --cache .npm --prefer-offline
 frontend:
   phases:
     preBuild:
       commands:
-        - npx ng version
+        - npm ci
     build:
       commands:
-        - npx ng build --configuration=production
+        - npm run build -- --configuration production
   artifacts:
     baseDirectory: dist/amplify-angular-template
     files:
       - '**/*'
   cache:
     paths:
-      - .npm/**/*
       - node_modules/**/*
