@@ -1,17 +1,32 @@
-<!-- todos.component.html -->
 <main>
-    <h1>My todos</h1>
-    <button (click)="createTodo()">+ new</button>
-    <ul>
-        <li *ngFor="let todo of todos;" (click)="deleteTodo(todo.id)">
-            {{ todo.content }}
-        </li>
-    </ul>
-    <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/gen2/start/quickstart/">
-            Review next steps of this tutorial.
-        </a>
-    </div>
+    <h1>My Todos</h1>
+
+    <button (click)="createTodo()">+ New Todo</button>
+
+    <table border="1" cellspacing="0" cellpadding="8" style="margin-top: 20px; width: 100%;">
+        <thead>
+            <tr>
+                <th>Done</th>
+                <th>Content</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr *ngFor="let todo of todos">
+                <td>
+                    <input type="checkbox" [checked]="todo.isDone" (change)="toggleTodo(todo)" />
+                </td>
+
+                <td [style.textDecoration]="todo.isDone ? 'line-through' : 'none'">
+                    {{ todo.content }}
+                </td>
+
+                <td>
+                    <button (click)="editTodo(todo)">Edit</button>
+                    <button (click)="deleteTodo(todo.id)">Delete</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 </main>
