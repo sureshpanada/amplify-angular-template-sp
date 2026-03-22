@@ -99,6 +99,17 @@
               }
             },
             {
+              "type": "key",
+              "properties": {
+                "name": "todosByOwnerAndId",
+                "queryField": "listTodoByOwnerAndId",
+                "fields": [
+                  "owner",
+                  "id"
+                ]
+              }
+            },
+            {
               "type": "auth",
               "properties": {
                 "rules": [

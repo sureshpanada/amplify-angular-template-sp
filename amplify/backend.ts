@@ -2,6 +2,7 @@ import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { todoApi } from './functions/todo-api/resource';
+import { HttpUserPoolAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 
 // CDK imports
 import {
@@ -44,6 +45,14 @@ const httpApi = new HttpApi(apiStack, 'TodoHttpApi', {
   },
 });
 
+const userPool = backend.auth.resources.userPool;
+const userPoolClient = backend.auth.resources.userPoolClient;
+
+const authorizer = new HttpUserPoolAuthorizer('TodoAuthorizer', userPool, {
+  userPoolClients: [userPoolClient],
+  identitySource: ['$request.header.Authorization'],
+});
+
 // connect lambda
 const integration = new HttpLambdaIntegration(
   'TodoIntegration',
@@ -55,12 +64,14 @@ httpApi.addRoutes({
   path: '/todos',
   methods: [HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT],
   integration,
+  authorizer,
 });
 
 httpApi.addRoutes({
   path: '/todos/{id}',
   methods: [HttpMethod.DELETE],
   integration,
+  authorizer,
 });
 
 //  PRINT URL

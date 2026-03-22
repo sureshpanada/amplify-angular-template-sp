@@ -5,7 +5,7 @@ import { from, switchMap } from 'rxjs';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return from(fetchAuthSession()).pipe(
     switchMap((session) => {
-      const token = session.tokens?.idToken?.toString();
+      const token = session.tokens?.accessToken?.toString();
 
       const authReq = req.clone({
         setHeaders: {

@@ -3,8 +3,9 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import {
   DynamoDBDocumentClient,
   PutCommand,
-  ScanCommand,
+  QueryCommand,
   DeleteCommand,
+  UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 
 const client = new DynamoDBClient({});
@@ -14,7 +15,8 @@ const TABLE = process.env.TABLE_NAME!;
 
 export const handler = async (event: any) => {
   const method = event.requestContext.http.method;
-  console.log('METHOD:', event.requestContext.http.method);
+  const user = event.requestContext?.authorizer?.jwt?.claims?.sub;
+  console.log('User:', user);
   if (event.requestContext.http.method === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -30,8 +32,27 @@ export const handler = async (event: any) => {
   try {
     switch (method) {
       case 'GET':
-        const data = await db.send(new ScanCommand({ TableName: TABLE }));
-        return response(200, data.Items);
+        const lastKey = event.queryStringParameters?.lastKey;
+        const result = await db.send(
+          new QueryCommand({
+            TableName: TABLE,
+            IndexName: 'owner-id-index', // 🔥 auto name
+            KeyConditionExpression: '#owner = :owner',
+            ExpressionAttributeNames: {
+              '#owner': 'owner',
+            },
+            ExpressionAttributeValues: {
+              ':owner': user,
+            },
+            ExclusiveStartKey: lastKey ? JSON.parse(lastKey) : undefined,
+            Limit: 10, // pagination size
+          })
+        );
+
+        return response(200, {
+          items: result.Items,
+          lastKey: result.LastEvaluatedKey,
+        });
 
       case 'POST':
         const body = JSON.parse(event.body);
@@ -40,6 +61,7 @@ export const handler = async (event: any) => {
           id: Date.now().toString(),
           content: body.content,
           isDone: false,
+          owner: user,
         };
 
         await db.send(
@@ -65,9 +87,14 @@ export const handler = async (event: any) => {
         };
 
         await db.send(
-          new PutCommand({
+          new UpdateCommand({
             TableName: TABLE,
-            Item: updatedItem,
+            Key: { id: updateBody.id },
+            UpdateExpression: 'SET content = :content, isDone = :isDone',
+            ExpressionAttributeValues: {
+              ':content': updateBody.content,
+              ':isDone': updateBody.isDone ?? false,
+            },
           })
         );
 
